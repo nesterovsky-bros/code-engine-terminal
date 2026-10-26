@@ -65,6 +65,20 @@ function parsePositiveInteger(rawValue: string | undefined, fallback: number, se
   return value;
 }
 
+function parseNonNegativeNumber(rawValue: string | undefined, fallback: number, settingName: string): number {
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const value = Number(rawValue);
+
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`${settingName} must be a non-negative number`);
+  }
+
+  return value;
+}
+
 const resourceGroup = requireEnvironmentValue("RESOURCE_GROUP");
 
 export const config = {
@@ -77,6 +91,10 @@ export const config = {
   terminalEnvHeaderPrefix: process.env.TERMINAL_ENV_HEADER_PREFIX?.trim().toLowerCase() || "x-terminal-",
   ibmcloudApiKey: requireEnvironmentValue("API_KEY_ID"),
   port: parsePositiveInteger(process.env.PORT, 8080, "PORT"),
+  jobrunCleanupCutoffMinutes: parseNonNegativeNumber(
+    process.env.JOBRUN_CLEANUP_CUTOFF_MINUTES,
+    60,
+    "JOBRUN_CLEANUP_CUTOFF_MINUTES"),
 
   resolveImageReference(image: string): string {
     if (!languageImages.has(image)) {

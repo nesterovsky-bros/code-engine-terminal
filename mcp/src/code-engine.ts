@@ -254,6 +254,63 @@ export async function deleteRun(terminalId: string): Promise<Record<string, unkn
   return { terminalId, accepted: true };
 }
 
+export async function deleteCompletedRuns(cutoffMinutes = 60): Promise<Record<string, unknown>> {
+  if (!Number.isFinite(cutoffMinutes) || cutoffMinutes < 0) {
+    throw new Error("cutoffMinutes must be a non-negative finite number");
+  }
+
+  const result = await runCli(["ce", "jobrun", "list", "--output", "json"]);
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+
+    throw new Error(`IBM Cloud CLI returned invalid JSON: ${detail}`);
+  }
+
+  const jobruns = Array.isArray(parsed)
+    ? parsed.filter(isRecord)
+    : isRecord(parsed) && Array.isArray(parsed.items)
+      ? parsed.items.filter(isRecord)
+      : [];
+  const prefix = `${config.jobName}-`;
+  const cutoff = Date.now() - cutoffMinutes * 60 * 1000;
+  const deleted: string[] = [];
+
+  for (const jobrun of jobruns) {
+    const metadata = isRecord(jobrun.metadata) ? jobrun.metadata : {};
+    const name = typeof metadata.name === "string" ? metadata.name : jobrun.name;
+
+    if (typeof name !== "string" || !name.startsWith(prefix)) {
+      continue;
+    }
+
+    const terminalId = name.slice(prefix.length);
+
+    try {
+      if (config.getJobrunName(terminalId) !== name) {
+        continue;
+      }
+    } catch {
+      continue;
+    }
+
+    const status = parseRunStatus(jobrun, terminalId);
+    const finishedAt = typeof status.finishedAt === "string" ? Date.parse(status.finishedAt) : NaN;
+
+    if (status.status !== "completed" || !Number.isFinite(finishedAt) || finishedAt > cutoff) {
+      continue;
+    }
+
+    await runCli(["ce", "jobrun", "delete", "--name", name, "--force"]);
+    deleted.push(name);
+  }
+
+  return { deleted, count: deleted.length };
+}
+
 export async function initializeIbmCloud(): Promise<void> {
   const { ibmcloudApiKey, projectId, region, resourceGroup } = config;
   

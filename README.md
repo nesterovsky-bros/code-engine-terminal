@@ -89,6 +89,9 @@ Optional configuration:
 - `PORT`: HTTP listen port; defaults to `8080`.
 - `API_KEY_ID`: IBM Cloud API key used to log in at startup. Not
   automatically injected; configure it through a secret in deployment.
+- `JOBRUN_CLEANUP_CUTOFF_MINUTES`: age threshold in minutes for deleting
+  completed jobruns after each successful shell submission; defaults to `60`.
+  Set to `0` to delete all completed jobruns.
 
 The MCP endpoint is `/mcp`; `/health` is a liveness endpoint. Tools are `shell`,
 `status`, `output`, and `stop`.

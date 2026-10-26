@@ -4,7 +4,7 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import type { ServerContext } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { config, resourceProfiles, resourceProfileValues, validateConfiguration } from "./config.ts";
-import { deleteRun, getRun, getRunOutput, initializeIbmCloud, submitRun } from "./code-engine.ts";
+import { deleteCompletedRuns, deleteRun, getRun, getRunOutput, initializeIbmCloud, submitRun } from "./code-engine.ts";
 
 function isStringRecord(value: unknown): value is Record<string, string> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -193,6 +193,10 @@ gateway headers, and $TERMINAL_ID from the generated job ID.`,
         timeout: input.timeout,
         resourceProfile: input.resourceProfile,
         env: getRunEnvironment(ctx),
+      });
+
+      deleteCompletedRuns(config.jobrunCleanupCutoffMinutes).catch(error => {
+        console.error("Failed to clean up completed Code Engine jobruns:", error);
       });
 
       return textResult(result);
