@@ -1,0 +1,27 @@
+{
+  "name": "terminal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "npm run build && node --env-file=.env dist/index.js",
+    "start": "node dist/index.js",
+    "format": "prettier --write --prose-wrap always .prettierrc.json package.json tsconfig.json ../README.md ../docs/spec.md src/**/*.ts",
+    "format:check": "prettier --check --prose-wrap always .prettierrc.json package.json tsconfig.json ../README.md ../docs/spec.md src/**/*.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/node": "2.1.1",
+    "@modelcontextprotocol/server": "2.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.3"
+  }
+}
